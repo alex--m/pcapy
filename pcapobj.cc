@@ -80,6 +80,7 @@ static PyObject* p_set_promisc(register pcapobject* pp, PyObject* args);
 static PyObject* p_set_timeout(register pcapobject* pp, PyObject* args);
 static PyObject* p_set_buffer_size(register pcapobject* pp, PyObject* args);
 static PyObject* p_set_rfmon(register pcapobject* pp, PyObject* args);
+static PyObject* p_set_fanout(register pcapobject* pp, PyObject* args);
 static PyObject* p_activate(register pcapobject* pp, PyObject* args);
 
 static PyMethodDef p_methods[] = {
@@ -107,6 +108,7 @@ static PyMethodDef p_methods[] = {
 #ifndef WIN32
   {"getfd", (PyCFunction) p_getfd, METH_VARARGS, "get selectable pcap fd"},
   {"set_rfmon", (PyCFunction)p_set_rfmon, METH_VARARGS, "set monitor mode for a not-yet-activated capture handle"}, /* Available on Npcap, not on Winpcap. */
+  {"set_fanout", (PyCFunction)p_set_fanout, METH_VARARGS, "set the fanout group for a not-yet-activated capture handle"},
 #endif
   {NULL, NULL}	/* sentinel */
 };
@@ -747,6 +749,29 @@ p_set_rfmon(register pcapobject* pp, PyObject* args)
 	int ret = pcap_set_rfmon(pp->pcap, rfmon);
 	return Py_BuildValue("i", ret);
 }
+
+static PyObject*
+p_set_fanout(register pcapobject* pp, PyObject* args)
+{
+	if (Py_TYPE(pp) != &Pcaptype) {
+		PyErr_SetString(PcapError, "Not a pcap object");
+		return NULL;
+	}
+
+	if (!pp->pcap)
+		return err_closed();
+
+	int enable;
+	uint16_t mode;
+	uint16_t group_id;
+
+	if (!PyArg_ParseTuple(args, "iHH", &enable, &mode, &group_id))
+		return NULL;
+
+	int ret = pcap_set_fanout_linux(pp->pcap, enable, mode, group_id);
+	return Py_BuildValue("i", ret);
+}
+
 
 static PyObject*
 p_activate(register pcapobject* pp, PyObject*)
