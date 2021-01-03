@@ -91,11 +91,13 @@ open_live(PyObject *self, PyObject *args)
   int  snaplen;
   int  promisc;
   int  to_ms;
+  int  fanout;
 
   bpf_u_int32 net, mask;
+  uint16_t mode, group_id;
 
 
-  if(!PyArg_ParseTuple(args,"siii:open_live",&device,&snaplen,&promisc,&to_ms))
+  if(!PyArg_ParseTuple(args,"siiiHH:open_live",&device,&snaplen,&promisc,&to_ms,&fanout,&mode,&group_id))
     return NULL;
 
 #ifdef WIN32
@@ -113,7 +115,7 @@ open_live(PyObject *self, PyObject *args)
 
   pcap_t* pt;
 
-  pt = pcap_open_live(device, snaplen, promisc!=0, to_ms, errbuff);
+  pt = pcap_open_live(device, snaplen, promisc!=0, to_ms, errbuff, fanout!=0, mode, group_id);
 #ifdef WIN32
       free(device);
 #endif
